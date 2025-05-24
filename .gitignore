@@ -1,2 +1,13 @@
+.idea/
+venv/
+.venv/
+.ruff_cache/
+
 .env
-__pycache__/
+.coverage
+
+logs/
+.format.log
+/**/.pytest_cache
+__pycache__
+.mypy_cache/

@@ -1,0 +1,33 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup SSH Key
+        run: |
+            echo "Creating .ssh directory"
+            mkdir -p ~/.ssh
+            echo "Dumping first 5 lines of private key (masked)"
+            echo "${{ secrets.SSH_PRIVATE_KEY }}" | head -n 5 || echo "EMPTY KEY"
+            echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+            chmod 600 ~/.ssh/id_rsa
+            echo "Scanning host key"
+            ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to server
+        run: |
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+            cd ${{ secrets.DP_PATH }}
+            git pull origin master
+            docker compose down
+            docker compose up -d --build
+          EOF
