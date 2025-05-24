@@ -14,20 +14,21 @@ jobs:
 
       - name: Setup SSH Key
         run: |
-            echo "Creating .ssh directory"
-            mkdir -p ~/.ssh
-            echo "Dumping first 5 lines of private key (masked)"
-            echo "${{ secrets.SSH_PRIVATE_KEY }}" | head -n 5 || echo "EMPTY KEY"
-            echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-            chmod 600 ~/.ssh/id_rsa
-            echo "Scanning host key"
-            ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+          echo "Creating .ssh directory"
+          mkdir -p ~/.ssh
+          echo "Dumping first 5 lines of private key (masked)"
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | head -n 5 || echo "EMPTY KEY"
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "Scanning host key"
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
       - name: Deploy to server
         run: |
           ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
             cd ${{ secrets.DP_PATH }}
             git pull origin master
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
             docker compose down
             docker compose up -d --build
           EOF
