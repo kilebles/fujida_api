@@ -13,3 +13,17 @@ services:
       --port 8000
     volumes:
       - .:/app
+
+  postgres:
+    image: postgres:15
+    container_name: pg_fujida
+    restart: always
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    
+  volumes:
+    pgdata:
