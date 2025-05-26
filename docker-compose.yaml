@@ -1,9 +1,29 @@
- ✔ Container fujida_api        Removed                                                                                         0.4s
- ✔ Network fujida_api_default  Removed                                                                                         0.1s
-root@4584763-dt72856:/projects/fujida_api# docker compose up -d
-[+] Running 2/2
- ✔ Network fujida_api_default  Created                                                                                         0.1s
- ✔ Container fujida_api        Started                                                                                         0.3s
-root@4584763-dt72856:/projects/fujida_api# docker exec -it pg_fujida psql -U postgres
-Error response from daemon: No such container: pg_fujida
-root@4584763-dt72856:/projects/fujida_api#
+services:
+  fujida_api:
+    build: .
+    container_name: fujida_api
+    restart: always
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    command: >
+      uvicorn app.fujida_api.main:app
+      --host 0.0.0.0
+      --port 8000
+    volumes:
+      - .:/app
+
+  postgres:
+    image: postgres:15
+    container_name: pg_fujida
+    restart: always
+    ports:
+      - "5444:5432"
+    env_file:
+      - .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
