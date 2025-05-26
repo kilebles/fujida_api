@@ -11,7 +11,10 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
     
-    model_config = SettingsConfigDict(env_file=".env")
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_prefix=''
+    )
     
 
 config = Settings()  # type: ignore
