@@ -21,10 +21,9 @@ jobs:
 
       - name: Deploy to server
         run: |
-          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} 'bash -s' <<'EOF'
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} <<EOF
             cd ${{ secrets.DP_PATH }}
-            git fetch origin master
-            git reset --hard origin/master
+            git pull origin master
             docker compose down
             docker compose up -d --build
           EOF
