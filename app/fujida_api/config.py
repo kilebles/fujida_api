@@ -10,8 +10,9 @@ class Settings(BaseSettings):
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
-    
     DATABASE_URL: str
+    
+    OPENAI_API_KEY: str
     
     model_config = SettingsConfigDict(
         env_file=".env",
