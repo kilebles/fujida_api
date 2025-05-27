@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
+config = context.config
 
 load_dotenv()
 config.set_main_option("sqlalchemy.url", os.environ["DATABASE_URL"])
@@ -15,7 +16,6 @@ config.set_main_option("sqlalchemy.url", os.environ["DATABASE_URL"])
 # Настройка логирования
 fileConfig(context.config.config_file_name)
 
-config = context.config
 
 import sys
 import os
