@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
     
+    DATABASE_URL: str
+    
     model_config = SettingsConfigDict(
         env_file=".env",
         env_prefix=''
