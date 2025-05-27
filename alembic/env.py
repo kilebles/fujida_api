@@ -1,10 +1,16 @@
+import os
 import asyncio
 from logging.config import fileConfig
+from dotenv import load_dotenv
 
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
+
+
+load_dotenv()
+config.set_main_option("sqlalchemy.url", os.environ["DATABASE_URL"])
 
 # Настройка логирования
 fileConfig(context.config.config_file_name)
