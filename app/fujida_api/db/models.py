@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Boolean, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship, declarative_base
 from pgvector.sqlalchemy import Vector
 
@@ -11,6 +11,8 @@ class DeviceModel(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True, nullable=False)
     embedding = Column(Vector(1536))
+    is_active = Column(Boolean, default=False)
+    is_detector = Column(Boolean, default=False)
 
     specs = relationship('DeviceSpec', back_populates='model', cascade='all, delete')
 
