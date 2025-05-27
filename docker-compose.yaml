@@ -4,7 +4,7 @@ services:
     container_name: fujida_api
     restart: always
     ports:
-      - "8000:8000"
+      - "8888:8000"
     env_file:
       - .env
     command: >
