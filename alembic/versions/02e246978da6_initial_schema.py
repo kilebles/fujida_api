@@ -24,7 +24,7 @@ def upgrade() -> None:
     op.create_table('device_models',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
-    sa.Column('embedding', pgvector.sqlalchemy.vector.Vector(dim=1536), nullable=True),
+    sa.Column('embedding', Vector(dim=1536), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('name')
     )
@@ -32,7 +32,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('question', sa.String(), nullable=False),
     sa.Column('answer', sa.String(), nullable=False),
-    sa.Column('embedding', pgvector.sqlalchemy.vector.Vector(dim=1536), nullable=True),
+    sa.Column('embedding', Vector(dim=1536), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('device_specs',
