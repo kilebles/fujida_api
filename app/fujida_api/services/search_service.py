@@ -5,9 +5,9 @@ from openai import AsyncOpenAI
 
 from app.fujida_api.db.models import DeviceModel
 from app.fujida_api.schemas.search import DeviceSearchResult, DeviceSpecOut
-from app.fujida_api.config import settings
+from app.fujida_api.config import config
 
-openai_client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+openai_client = AsyncOpenAI(api_key=config.OPENAI_API_KEY)
 
 async def generate_query_embedding(query: str) -> list[float]:
     response = await openai_client.embeddings.create(
