@@ -15,7 +15,7 @@ services:
       - .:/app
 
   postgres:
-    image: postgres:15
+    image: ankane/pgvector:latest
     container_name: pg_fujida
     restart: always
     ports:
@@ -24,6 +24,17 @@ services:
       - .env
     volumes:
       - pgdata:/var/lib/postgresql/data
+
+  migrate:
+    build: .
+    container_name: fujida_migrations
+    command: alembic upgrade head
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    volumes:
+      - .:/app
 
 volumes:
   pgdata:
