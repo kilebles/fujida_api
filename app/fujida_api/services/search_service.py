@@ -9,12 +9,14 @@ from app.fujida_api.config import config
 
 openai_client = AsyncOpenAI(api_key=config.OPENAI_API_KEY)
 
+
 async def generate_query_embedding(query: str) -> list[float]:
     response = await openai_client.embeddings.create(
         model="text-embedding-3-small",
         input=query
     )
     return response.data[0].embedding
+
 
 async def get_similar_models(session: AsyncSession, query_vector: list[float], limit: int) -> list[DeviceSearchResult]:
     stmt = (
