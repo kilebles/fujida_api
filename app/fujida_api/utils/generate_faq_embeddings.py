@@ -19,10 +19,7 @@ BATCH_SIZE = 100
 async def generate_faq_embeddings():
     async with async_session_maker() as session:
         result = await session.execute(
-            select(FAQEntry).where(
-                (FAQEntry.embedding.is_(None)) |
-                (FAQEntry.model_version != MODEL_NAME)
-            )
+            select(FAQEntry).where(FAQEntry.embedding.is_(None))
         )
         records = result.scalars().all()
 
@@ -30,7 +27,7 @@ async def generate_faq_embeddings():
             logger.info("Нет записей для генерации эмбеддингов.")
             return
 
-        logger.info(f"Найдено записей: {len(records)}")
+        logger.info(f"Найдено записей без эмбеддингов: {len(records)}")
 
         for i in range(0, len(records), BATCH_SIZE):
             batch = records[i:i + BATCH_SIZE]
@@ -47,14 +44,13 @@ async def generate_faq_embeddings():
                 )
                 for record, item in zip(batch, response.data):
                     record.embedding = item.embedding
-                    record.model_version = MODEL_NAME
 
                 logger.info(f"Обработано {len(batch)} записей (ID: {batch[0].id} – {batch[-1].id})")
             except Exception as e:
-                logger.error(f"Ошибка на батче с ID {batch[0].id}: {e}")
+                logger.error(f"Ошибка при генерации эмбеддингов (ID {batch[0].id}): {e}")
 
         await session.commit()
-        logger.info("Все эмбеддинги FAQ успешно сгенерированы.")
+        logger.info("Эмбеддинги FAQ успешно сгенерированы и сохранены.")
 
 
 if __name__ == '__main__':
