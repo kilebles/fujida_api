@@ -14,11 +14,14 @@ async def faq_search(
     session: AsyncSession = Depends(get_async_session),
 ):
     faqs = await get_similar_faq(body.query, session)
-    return [
-        {
-            'question': faq.question,
-            'answer': faq.answer,
-            'query': body.query,
-        }
-        for faq in faqs
-    ]
+    
+    return {
+        'query': body.query,
+        'result': [
+            {
+                'question': faq.question,
+                'answer': faq.answer
+            }
+            for faq in faqs
+        ]
+    }
