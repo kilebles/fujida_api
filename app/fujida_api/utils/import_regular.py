@@ -67,7 +67,6 @@ async def import_models():
                     session.add(spec)
 
         await session.commit()
-        print('✅ Import complete')
 
 
 if __name__ == '__main__':
