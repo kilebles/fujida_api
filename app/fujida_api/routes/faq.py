@@ -8,9 +8,17 @@ from app.fujida_api.services.faq_service import get_similar_faq
 router = APIRouter()
 
 
-@router.post('/faq/search', response_model=list[FAQAnswer])
+@router.post('/faq/search')
 async def faq_search(
     body: FAQQuery,
     session: AsyncSession = Depends(get_async_session),
 ):
-    return await get_similar_faq(body.query, session)
+    faqs = await get_similar_faq(body.query, session)
+    return [
+        {
+            'question': faq.question,
+            'answer': faq.answer,
+            'query': body.query,
+        }
+        for faq in faqs
+    ]
