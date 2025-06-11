@@ -1,20 +1,22 @@
 from sqlalchemy import create_engine, select
+from sqlalchemy.orm import Session
 from sqladmin import Admin, ModelView, action
 from starlette.responses import RedirectResponse
 from starlette.requests import Request
 
 from app.fujida_api.config import config
-from app.fujida_api.db.models import FAQEntry
+from app.fujida_api.db.models import FAQEntry, DeviceModel
 from app.fujida_api.utils.generate_faq_embeddings import generate_embedding_for_text
+from app.fujida_api.utils.generate_embeddings import generate_embedding_for_text as generate_device_embedding_for_text
 
 SYNC_DATABASE_URL = config.DATABASE_URL.replace('postgresql+asyncpg', 'postgresql')
 
 sync_engine = create_engine(SYNC_DATABASE_URL, echo=False)
 
-
 def setup_admin(app):
     admin = Admin(app, sync_engine, templates_dir='app/fujida_api/admin/templates')
 
+    # FAQEntryAdmin
     class FAQEntryAdmin(ModelView, model=FAQEntry):
         column_list = [FAQEntry.id, FAQEntry.question, FAQEntry.answer]
         form_columns = ['question', 'answer']
@@ -25,7 +27,6 @@ def setup_admin(app):
         )
         def regenerate_embeddings(self, request: Request):
             import asyncio
-            from sqlalchemy import select
 
             pks_param = request.query_params.get("pks")
             if not pks_param:
@@ -34,25 +35,71 @@ def setup_admin(app):
 
             pk_list = [int(pk) for pk in pks_param.split(",") if pk.strip().isdigit()]
 
-            entries = self.session.scalars(
-                select(FAQEntry).where(FAQEntry.id.in_(pk_list))
-            ).all()
+            with self.engine.connect() as connection:
+                with Session(bind=connection) as session:
+                    entries = session.scalars(
+                        select(FAQEntry).where(FAQEntry.id.in_(pk_list))
+                    ).all()
 
-            updated_count = 0
+                    updated_count = 0
 
-            for entry in entries:
-                text = f'{entry.question.strip()}\n{entry.answer.strip()}'
-                try:
-                    response = asyncio.run(generate_embedding_for_text(text))
-                    entry.embedding = response
-                    print(f"OK → ID {entry.id}")
-                    updated_count += 1
-                except Exception as e:
-                    print(f"Ошибка при генерации эмбеддинга для ID {entry.id}: {e}")
+                    for entry in entries:
+                        text = f'{entry.question.strip()}\n{entry.answer.strip()}'
+                        try:
+                            response = asyncio.run(generate_embedding_for_text(text))
+                            entry.embedding = response
+                            print(f"OK → FAQEntry ID {entry.id}")
+                            updated_count += 1
+                        except Exception as e:
+                            print(f"Ошибка при генерации эмбеддинга для FAQEntry ID {entry.id}: {e}")
 
-            self.session.commit()
+                    session.commit()
 
-            request.session["admin_flash"] = f"Успешно обновлено {updated_count} записей."
+            request.session["admin_flash"] = f"Успешно обновлено {updated_count} FAQ записей."
             return RedirectResponse(request.url_for("admin:list", identity=self.identity))
 
     admin.add_view(FAQEntryAdmin)
+
+    # DeviceModelAdmin
+    class DeviceModelAdmin(ModelView, model=DeviceModel):
+        column_list = [DeviceModel.id, DeviceModel.name, DeviceModel.is_active, DeviceModel.is_detector]
+        form_columns = ['name', 'is_active', 'is_detector']
+
+        @action(
+            name="regenerate_embeddings",
+            label="Перегенерировать эмбеддинги"
+        )
+        def regenerate_embeddings(self, request: Request):
+            import asyncio
+
+            pks_param = request.query_params.get("pks")
+            if not pks_param:
+                print("Нет выбранных записей для обновления эмбеддингов.")
+                return RedirectResponse(request.url_for("admin:list", identity=self.identity))
+
+            pk_list = [int(pk) for pk in pks_param.split(",") if pk.strip().isdigit()]
+
+            with self.engine.connect() as connection:
+                with Session(bind=connection) as session:
+                    entries = session.scalars(
+                        select(DeviceModel).where(DeviceModel.id.in_(pk_list))
+                    ).all()
+
+                    updated_count = 0
+
+                    for entry in entries:
+                        text = entry.name.strip()
+                        try:
+                            response = asyncio.run(generate_device_embedding_for_text(text))
+                            entry.embedding = response
+                            print(f"OK → DeviceModel ID {entry.id}")
+                            updated_count += 1
+                        except Exception as e:
+                            print(f"Ошибка при генерации эмбеддинга для DeviceModel ID {entry.id}: {e}")
+
+                    session.commit()
+
+            request.session["admin_flash"] = f"Успешно обновлено {updated_count} DeviceModel записей."
+            return RedirectResponse(request.url_for("admin:list", identity=self.identity))
+
+    admin.add_view(DeviceModelAdmin)
