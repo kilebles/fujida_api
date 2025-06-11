@@ -6,7 +6,7 @@ from starlette.requests import Request
 
 from app.fujida_api.config import config
 from app.fujida_api.db.models import FAQEntry
-from app.fujida_api.utils.generate_faq_embeddings import generate_embedding_for_text
+from app.fujida_api.utils.generate_faq_embeddings import generate_embedding_for_text_sync
 
 SYNC_DATABASE_URL = config.DATABASE_URL.replace('postgresql+asyncpg', 'postgresql')
 sync_engine = create_engine(SYNC_DATABASE_URL, echo=False)
@@ -24,8 +24,6 @@ def setup_admin(app):
             label='Перегенерировать эмбеддинги'
         )
         def regenerate_embeddings(self, request: Request):
-            import asyncio
-
             pks_param = request.query_params.get('pks')
             if not pks_param:
                 print("Нет выбранных записей для обновления эмбеддингов.")
@@ -34,7 +32,7 @@ def setup_admin(app):
             pk_list = [int(pk) for pk in pks_param.split(',') if pk.strip().isdigit()]
             print(f"Выбрано записей: {pk_list}")
 
-            with Session(bind=self.session.bind) as session:
+            with Session(bind=sync_engine) as session:
                 entries = session.scalars(
                     select(FAQEntry).where(FAQEntry.id.in_(pk_list))
                 ).all()
@@ -44,7 +42,7 @@ def setup_admin(app):
                 for entry in entries:
                     text = f'{entry.question.strip()}\n{entry.answer.strip()}'
                     try:
-                        response = asyncio.run(generate_embedding_for_text(text))
+                        response = generate_embedding_for_text_sync(text)
                         entry.embedding = response
                         print(f"OK → ID {entry.id}")
                         updated_count += 1

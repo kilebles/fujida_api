@@ -62,6 +62,10 @@ async def generate_embedding_for_text(text: str) -> list[float]:
     return response.data[0].embedding
 
 
+def generate_embedding_for_text_sync(text: str) -> list[float]:
+    """Sync wrapper for generate_embedding_for_text"""
+    return asyncio.run(generate_embedding_for_text(text))
+
 
 if __name__ == '__main__':
     asyncio.run(generate_faq_embeddings())
