@@ -23,12 +23,16 @@ def setup_admin(app):
             name="regenerate_embeddings",
             label="Перегенерировать эмбеддинги"
         )
-        def regenerate_embeddings(self, request: Request, pk_list=None):
+        def regenerate_embeddings(self, request: Request):
             import asyncio
+            from sqlalchemy import select
 
-            if not pk_list:
+            pks_param = request.query_params.get("pks")
+            if not pks_param:
                 print("Нет выбранных записей для обновления эмбеддингов.")
                 return RedirectResponse(request.url_for("admin:list", identity=self.identity))
+
+            pk_list = [int(pk) for pk in pks_param.split(",") if pk.strip().isdigit()]
 
             with self.admin.sessionmaker() as session:
                 entries = session.scalars(
@@ -50,7 +54,6 @@ def setup_admin(app):
                 session.commit()
 
             request.session["admin_flash"] = f"Успешно обновлено {updated_count} записей."
-
             return RedirectResponse(request.url_for("admin:list", identity=self.identity))
 
     admin.add_view(FAQEntryAdmin)
