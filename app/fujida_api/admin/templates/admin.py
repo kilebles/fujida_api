@@ -9,7 +9,6 @@ from app.fujida_api.db.models import FAQEntry
 from app.fujida_api.utils.generate_faq_embeddings import generate_embedding_for_text
 
 SYNC_DATABASE_URL = config.DATABASE_URL.replace('postgresql+asyncpg', 'postgresql')
-
 sync_engine = create_engine(SYNC_DATABASE_URL, echo=False)
 
 
@@ -33,28 +32,29 @@ def setup_admin(app):
                 return RedirectResponse(request.url_for("admin:list", identity=self.identity))
 
             pk_list = [int(pk) for pk in pks_param.split(",") if pk.strip().isdigit()]
+            print(f"Выбрано записей: {pk_list}")
 
-            updated_count = 0
-
-            with self.engine.connect() as connection:
+            with self.admin.engine.connect() as connection:
                 with Session(bind=connection) as session:
                     entries = session.scalars(
                         select(FAQEntry).where(FAQEntry.id.in_(pk_list))
                     ).all()
+
+                    updated_count = 0
 
                     for entry in entries:
                         text = f'{entry.question.strip()}\n{entry.answer.strip()}'
                         try:
                             response = asyncio.run(generate_embedding_for_text(text))
                             entry.embedding = response
-                            print(f"OK → FAQEntry ID {entry.id}")
+                            print(f"OK → ID {entry.id}")
                             updated_count += 1
                         except Exception as e:
-                            print(f"Ошибка при генерации эмбеддинга для FAQEntry ID {entry.id}: {e}")
+                            print(f"Ошибка при генерации эмбеддинга для ID {entry.id}: {e}")
 
                     session.commit()
 
-            request.session["admin_flash"] = f"Успешно обновлено {updated_count} FAQ записей."
+            request.session["admin_flash"] = f"Успешно обновлено {updated_count} записей."
             return RedirectResponse(request.url_for("admin:list", identity=self.identity))
 
     admin.add_view(FAQEntryAdmin)
