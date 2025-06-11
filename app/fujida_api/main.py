@@ -1,6 +1,4 @@
-from fastapi.staticfiles import StaticFiles
 import uvicorn
-import sqladmin
 from fastapi import FastAPI
 
 from app.fujida_api.config import config
@@ -15,7 +13,6 @@ app.add_middleware(AdminAuthMiddleware)
 setup_cors(app)
 
 app.include_router(api_router)
-app.mount('/static', StaticFiles(directory=sqladmin.__path__[0] + '/static'), name='static')
 setup_admin(app)
 
 if __name__ == '__main__':
