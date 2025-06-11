@@ -21,16 +21,17 @@ def setup_admin(app):
             name="regenerate_embeddings",
             label="Перегенерировать эмбеддинги"
         )
-        async def regenerate_embeddings(self, request, entries):
+        def regenerate_embeddings(self, request, entries):
+            import asyncio
             for entry in entries:
                 text = f'{entry.question.strip()}\n{entry.answer.strip()}'
                 try:
-                    response = await generate_embedding_for_text(text)
+                    response = asyncio.run(generate_embedding_for_text(text))
                     entry.embedding = response
                 except Exception as e:
                     print(f"Ошибка при генерации эмбеддинга для ID {entry.id}: {e}")
 
-            await self.session.commit()
+            self.session.commit()
 
 
     admin.add_view(FAQEntryAdmin)
