@@ -6,7 +6,7 @@ from starlette.requests import Request
 
 from app.fujida_api.config import config
 from app.fujida_api.db.models import FAQEntry
-from app.fujida_api.utils.generate_faq_embeddings import generate_embedding_for_text_sync
+from app.fujida_api.utils.generate_faq_embeddings import generate_embedding_for_text
 
 SYNC_DATABASE_URL = config.DATABASE_URL.replace('postgresql+asyncpg', 'postgresql')
 sync_engine = create_engine(SYNC_DATABASE_URL, echo=False)
@@ -23,7 +23,7 @@ def setup_admin(app):
             name='regenerate_embeddings',
             label='Перегенерировать эмбеддинги'
         )
-        def regenerate_embeddings(self, request: Request):
+        async def regenerate_embeddings(self, request: Request):
             pks_param = request.query_params.get('pks')
             if not pks_param:
                 print("Нет выбранных записей для обновления эмбеддингов.")
@@ -42,7 +42,7 @@ def setup_admin(app):
                 for entry in entries:
                     text = f'{entry.question.strip()}\n{entry.answer.strip()}'
                     try:
-                        response = generate_embedding_for_text_sync(text)
+                        response = await generate_embedding_for_text(text)
                         entry.embedding = response
                         print(f"OK → ID {entry.id}")
                         updated_count += 1
