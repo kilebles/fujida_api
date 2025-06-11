@@ -9,6 +9,7 @@ SYNC_DATABASE_URL = config.DATABASE_URL.replace('postgresql+asyncpg', 'postgresq
 
 sync_engine = create_engine(SYNC_DATABASE_URL, echo=False)
 
+
 def setup_admin(app):
     admin = Admin(app, sync_engine, templates_dir='app/fujida_api/admin/templates')
 
@@ -22,20 +23,25 @@ def setup_admin(app):
         )
         def regenerate_embeddings(self, request, pk_list=None):
             import asyncio
-            from sqlalchemy import select
 
-            entries = self.session.scalars(
-                select(FAQEntry).where(FAQEntry.id.in_(pk_list))
-            ).all()
+            if not pk_list:
+                print("Нет выбранных записей для обновления эмбеддингов.")
+                return
 
-            for entry in entries:
-                text = f'{entry.question.strip()}\n{entry.answer.strip()}'
-                try:
-                    response = asyncio.run(generate_embedding_for_text(text))
-                    entry.embedding = response
-                except Exception as e:
-                    print(f"Ошибка при генерации эмбеддинга для ID {entry.id}: {e}")
+            with self.admin.sessionmaker() as session:
+                entries = session.scalars(
+                    select(FAQEntry).where(FAQEntry.id.in_(pk_list))
+                ).all()
 
-            self.session.commit()
+                for entry in entries:
+                    text = f'{entry.question.strip()}\n{entry.answer.strip()}'
+                    try:
+                        response = asyncio.run(generate_embedding_for_text(text))
+                        entry.embedding = response
+                        print(f"OK → ID {entry.id}")
+                    except Exception as e:
+                        print(f"Ошибка при генерации эмбеддинга для ID {entry.id}: {e}")
+
+                session.commit()
 
     admin.add_view(FAQEntryAdmin)
