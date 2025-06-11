@@ -1,5 +1,7 @@
 from sqlalchemy import create_engine, select
 from sqladmin import Admin, ModelView, action
+from starlette.responses import RedirectResponse
+from starlette.requests import Request
 
 from app.fujida_api.config import config
 from app.fujida_api.db.models import FAQEntry
@@ -21,17 +23,19 @@ def setup_admin(app):
             name="regenerate_embeddings",
             label="Перегенерировать эмбеддинги"
         )
-        def regenerate_embeddings(self, request, pk_list=None):
+        def regenerate_embeddings(self, request: Request, pk_list=None):
             import asyncio
 
             if not pk_list:
                 print("Нет выбранных записей для обновления эмбеддингов.")
-                return
+                return RedirectResponse(request.url_for("admin:list", identity=self.identity))
 
             with self.admin.sessionmaker() as session:
                 entries = session.scalars(
                     select(FAQEntry).where(FAQEntry.id.in_(pk_list))
                 ).all()
+
+                updated_count = 0
 
                 for entry in entries:
                     text = f'{entry.question.strip()}\n{entry.answer.strip()}'
@@ -39,9 +43,14 @@ def setup_admin(app):
                         response = asyncio.run(generate_embedding_for_text(text))
                         entry.embedding = response
                         print(f"OK → ID {entry.id}")
+                        updated_count += 1
                     except Exception as e:
                         print(f"Ошибка при генерации эмбеддинга для ID {entry.id}: {e}")
 
                 session.commit()
+
+            request.session["admin_flash"] = f"Успешно обновлено {updated_count} записей."
+
+            return RedirectResponse(request.url_for("admin:list", identity=self.identity))
 
     admin.add_view(FAQEntryAdmin)
