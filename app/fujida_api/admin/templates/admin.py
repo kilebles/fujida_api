@@ -20,41 +20,40 @@ def setup_admin(app):
         form_columns = ['question', 'answer']
 
         @action(
-            name="regenerate_embeddings",
-            label="Перегенерировать эмбеддинги"
+            name='regenerate_embeddings',
+            label='Перегенерировать эмбеддинги'
         )
         def regenerate_embeddings(self, request: Request):
             import asyncio
 
-            pks_param = request.query_params.get("pks")
+            pks_param = request.query_params.get('pks')
             if not pks_param:
                 print("Нет выбранных записей для обновления эмбеддингов.")
                 return RedirectResponse(request.url_for("admin:list", identity=self.identity))
 
-            pk_list = [int(pk) for pk in pks_param.split(",") if pk.strip().isdigit()]
+            pk_list = [int(pk) for pk in pks_param.split(',') if pk.strip().isdigit()]
             print(f"Выбрано записей: {pk_list}")
 
-            with self.admin.engine.connect() as connection:
-                with Session(bind=connection) as session:
-                    entries = session.scalars(
-                        select(FAQEntry).where(FAQEntry.id.in_(pk_list))
-                    ).all()
+            with Session(bind=self.session.bind) as session:
+                entries = session.scalars(
+                    select(FAQEntry).where(FAQEntry.id.in_(pk_list))
+                ).all()
 
-                    updated_count = 0
+                updated_count = 0
 
-                    for entry in entries:
-                        text = f'{entry.question.strip()}\n{entry.answer.strip()}'
-                        try:
-                            response = asyncio.run(generate_embedding_for_text(text))
-                            entry.embedding = response
-                            print(f"OK → ID {entry.id}")
-                            updated_count += 1
-                        except Exception as e:
-                            print(f"Ошибка при генерации эмбеддинга для ID {entry.id}: {e}")
+                for entry in entries:
+                    text = f'{entry.question.strip()}\n{entry.answer.strip()}'
+                    try:
+                        response = asyncio.run(generate_embedding_for_text(text))
+                        entry.embedding = response
+                        print(f"OK → ID {entry.id}")
+                        updated_count += 1
+                    except Exception as e:
+                        print(f"Ошибка при генерации эмбеддинга для ID {entry.id}: {e}")
 
-                    session.commit()
+                session.commit()
 
-            request.session["admin_flash"] = f"Успешно обновлено {updated_count} записей."
+            request.session['admin_flash'] = f"Успешно обновлено {updated_count} записей."
             return RedirectResponse(request.url_for("admin:list", identity=self.identity))
 
     admin.add_view(FAQEntryAdmin)
