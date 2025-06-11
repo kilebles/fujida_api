@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqladmin import Admin, ModelView, action
 
 from app.fujida_api.config import config
@@ -8,7 +8,6 @@ from app.fujida_api.utils.generate_faq_embeddings import generate_embedding_for_
 SYNC_DATABASE_URL = config.DATABASE_URL.replace('postgresql+asyncpg', 'postgresql')
 
 sync_engine = create_engine(SYNC_DATABASE_URL, echo=False)
-
 
 def setup_admin(app):
     admin = Admin(app, sync_engine, templates_dir='app/fujida_api/admin/templates')
@@ -21,8 +20,14 @@ def setup_admin(app):
             name="regenerate_embeddings",
             label="Перегенерировать эмбеддинги"
         )
-        def regenerate_embeddings(self, request, entries):
+        def regenerate_embeddings(self, request, pk_list):
             import asyncio
+            from sqlalchemy import select
+
+            entries = self.session.scalars(
+                select(FAQEntry).where(FAQEntry.id.in_(pk_list))
+            ).all()
+
             for entry in entries:
                 text = f'{entry.question.strip()}\n{entry.answer.strip()}'
                 try:
@@ -32,6 +37,5 @@ def setup_admin(app):
                     print(f"Ошибка при генерации эмбеддинга для ID {entry.id}: {e}")
 
             self.session.commit()
-
 
     admin.add_view(FAQEntryAdmin)
