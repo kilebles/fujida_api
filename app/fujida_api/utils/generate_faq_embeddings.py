@@ -1,5 +1,6 @@
 import asyncio
 import logging
+
 from sqlalchemy import select
 from openai import AsyncOpenAI
 
@@ -18,16 +19,15 @@ BATCH_SIZE = 100
 
 async def generate_faq_embeddings():
     async with async_session_maker() as session:
-        result = await session.execute(
-            select(FAQEntry).where(FAQEntry.embedding.is_(None))
-        )
+        # Просто забираем все записи, без фильтра по embedding
+        result = await session.execute(select(FAQEntry))
         records = result.scalars().all()
 
         if not records:
-            logger.info("Нет записей для генерации эмбеддингов.")
+            logger.info("В таблице FAQ нет записей.")
             return
 
-        logger.info(f"Найдено записей без эмбеддингов: {len(records)}")
+        logger.info(f"Всего записей FAQ: {len(records)}. Начинаем генерацию эмбеддингов...")
 
         for i in range(0, len(records), BATCH_SIZE):
             batch = records[i:i + BATCH_SIZE]
@@ -51,6 +51,16 @@ async def generate_faq_embeddings():
 
         await session.commit()
         logger.info("Эмбеддинги FAQ успешно сгенерированы и сохранены.")
+        
+        
+async def generate_embedding_for_text(text: str) -> list[float]:
+    response = await client.embeddings.create(
+        input=[text],
+        model=MODEL_NAME,
+        encoding_format="float"
+    )
+    return response.data[0].embedding
+
 
 
 if __name__ == '__main__':
