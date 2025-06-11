@@ -1,5 +1,6 @@
 import uvicorn
 from fastapi import FastAPI
+from starlette.middleware.sessions import SessionMiddleware  # добавить это
 
 from app.fujida_api.config import config
 from app.fujida_api.routes import router as api_router
@@ -9,6 +10,7 @@ from app.fujida_api.admin.templates.admin import setup_admin
 
 app = FastAPI(title='fujida_api')
 
+app.add_middleware(SessionMiddleware, secret_key='super-secret-key')
 app.add_middleware(AdminAuthMiddleware)
 setup_cors(app)
 
