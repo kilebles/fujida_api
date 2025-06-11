@@ -20,7 +20,7 @@ def setup_admin(app):
             name="regenerate_embeddings",
             label="Перегенерировать эмбеддинги"
         )
-        def regenerate_embeddings(self, request, pk_list):
+        def regenerate_embeddings(self, request, pk_list=None):
             import asyncio
             from sqlalchemy import select
 
