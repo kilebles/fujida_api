@@ -34,24 +34,23 @@ def setup_admin(app):
 
             pk_list = [int(pk) for pk in pks_param.split(",") if pk.strip().isdigit()]
 
-            with self.admin.sessionmaker() as session:
-                entries = session.scalars(
-                    select(FAQEntry).where(FAQEntry.id.in_(pk_list))
-                ).all()
+            entries = self.session.scalars(
+                select(FAQEntry).where(FAQEntry.id.in_(pk_list))
+            ).all()
 
-                updated_count = 0
+            updated_count = 0
 
-                for entry in entries:
-                    text = f'{entry.question.strip()}\n{entry.answer.strip()}'
-                    try:
-                        response = asyncio.run(generate_embedding_for_text(text))
-                        entry.embedding = response
-                        print(f"OK → ID {entry.id}")
-                        updated_count += 1
-                    except Exception as e:
-                        print(f"Ошибка при генерации эмбеддинга для ID {entry.id}: {e}")
+            for entry in entries:
+                text = f'{entry.question.strip()}\n{entry.answer.strip()}'
+                try:
+                    response = asyncio.run(generate_embedding_for_text(text))
+                    entry.embedding = response
+                    print(f"OK → ID {entry.id}")
+                    updated_count += 1
+                except Exception as e:
+                    print(f"Ошибка при генерации эмбеддинга для ID {entry.id}: {e}")
 
-                session.commit()
+            self.session.commit()
 
             request.session["admin_flash"] = f"Успешно обновлено {updated_count} записей."
             return RedirectResponse(request.url_for("admin:list", identity=self.identity))
