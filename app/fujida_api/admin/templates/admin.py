@@ -19,7 +19,7 @@ def setup_admin(app):
 
         @action(
             name="regenerate_embeddings",
-            text="Перегенерировать эмбеддинги"
+            label="Перегенерировать эмбеддинги"
         )
         async def regenerate_embeddings(self, request, entries):
             for entry in entries:
