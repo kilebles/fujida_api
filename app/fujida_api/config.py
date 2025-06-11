@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     
     OPENAI_API_KEY: str
     
+    ADMIN_USERNAME: str
+    ADMIN_PASSWORD: str
+    
     model_config = SettingsConfigDict(
         env_file=".env",
         env_prefix=''
